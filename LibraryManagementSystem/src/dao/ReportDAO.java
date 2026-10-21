@@ -1,0 +1,54 @@
+package dao;
+
+import db.DBConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class ReportDAO {
+
+    public void viewIssueReport() {
+
+        String sql = "SELECT bi.issues_id, b.title, m.member_name, "
+                + "bi.issue_date, bi.due_date, bi.return_date, "
+                + "bi.fine, bi.status "
+                + "FROM book_issues bi "
+                + "INNER JOIN books b ON bi.book_id = b.book_id "
+                + "INNER JOIN members m ON bi.member_id = m.member_id "
+                + "ORDER BY bi.issues_id";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            System.out.println("\n==================================================== BOOK ISSUE REPORT =======================================");
+
+            System.out.printf("%-8s %-22s %-20s %-12s %-12s %-12s %-10s %-10s%n",
+                    "ISSUE ID", "BOOK TITLE", "MEMBER",
+                    "ISSUED", "DUE DATE", "RETURNED", "FINE", "STATUS");
+
+            while (rs.next()) {
+
+                System.out.printf("%-8d %-22s %-20s %-12s %-12s %-12s %-10s %-10s%n",
+                        rs.getInt("issues_id"),
+                        rs.getString("title"),
+                        rs.getString("member_name"),
+                        rs.getDate("issue_date"),
+                        rs.getDate("due_date"),
+                        rs.getDate("return_date"),
+                        rs.getBigDecimal("fine"),
+                        rs.getString("status"));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error generating issue report.");
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        ReportDAO dao = new ReportDAO();
+        dao.viewIssueReport();
+    }
+}

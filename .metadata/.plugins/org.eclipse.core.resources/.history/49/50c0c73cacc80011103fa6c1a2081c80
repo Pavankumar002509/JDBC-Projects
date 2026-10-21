@@ -1,0 +1,44 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+import db.DBConnection;
+
+
+public class MemberDAO {
+	public void addMember() {
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enetr member name: ");
+		String name = sc.nextLine();
+		System.out.println("Enter Phone Number: ");
+		String phone = sc.nextLine();
+		System.out.println("enter email: ");
+		String email = sc.nextLine();
+		
+		String sql = "Insert into members "
+				+ "(member_name, phone, email, join_date) "
+				+ "Values (?,?,?, CURDATE())";
+		
+		try(Connection con = DBConnection.getConnection();
+			PreparedStatement ps = con.prepareStatement(sql)){
+			ps.setString(1,name);
+			ps.setString(2, phone);
+			ps.setString(3,email);
+			int rows = ps.executeUpdate();
+			if(rows > 0) {
+				System.out.println("Member added Succesfully");
+			}
+		}catch(SQLException e) {
+			System.out.println("error adding members.");
+			e.printStackTrace(); 
+		}
+	}
+	
+	public static void main(String[] args) {
+		MemberDAO dao = new MemberDAO();
+		dao.addMember();
+	}
+}

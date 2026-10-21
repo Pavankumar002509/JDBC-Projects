@@ -1,0 +1,79 @@
+
+package dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
+import db.DBConnection;
+
+public class ReturnDAO {
+    public void returnBook() {
+        Scanner sc = InputUtil.sc;
+        System.out.print("Enter Issue ID: ");
+        int issueId = sc.nextInt();
+        sc.nextLine();
+        String findIssue = "SELECT book_id FROM book_issues "
+                + "WHERE issues_id = ? AND status = 'ISSUED'";
+        String updateIssue = "UPDATE book_issues "
+                + "SET return_date = CURDATE(), "
+                + "fine = GREATEST(DATEDIFF(CURDATE(), due_date), 0) * 10, "
+                + "status = 'RETURNED' "
+                + "WHERE issues_id = ? AND status = 'ISSUED'";
+        String updateBook = "UPDATE books "
+                + "SET available_copies = available_copies + 1 "
+                + "WHERE book_id = ? AND available_copies < total_copies";
+        try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                int bookId;
+                try (PreparedStatement ps = con.prepareStatement(findIssue)) {
+                    ps.setInt(1, issueId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            System.out.println(
+                                    "Invalid Issue ID or book already returned.");
+                            con.rollback();
+                            return;
+                        }
+
+                        bookId = rs.getInt("book_id");
+                    }
+                }
+                try (PreparedStatement ps = con.prepareStatement(updateIssue)) {
+                    ps.setInt(1, issueId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement(updateBook)) {
+                    ps.setInt(1, bookId);
+                    if (ps.executeUpdate() != 1) {
+                        throw new SQLException(
+                                "Could not update the available book copies.");
+                    }
+                }
+                String fineQuery =
+                        "SELECT fine FROM book_issues WHERE issues_id = ?";
+                try (PreparedStatement ps = con.prepareStatement(fineQuery)) {
+                    ps.setInt(1, issueId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            System.out.println("Book returned successfully!");
+                            System.out.println(
+                                    "Fine: Rs. " + rs.getBigDecimal("fine"));
+                        }
+                    }
+                }
+                con.commit();
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error returning book.");
+            e.printStackTrace();
+        }
+    }
+}

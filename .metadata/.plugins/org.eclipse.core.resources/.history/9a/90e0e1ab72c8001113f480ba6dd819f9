@@ -1,0 +1,88 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+import db.DBConnection;
+
+public class BookDAO {
+	 public void addBook() {
+		 Scanner sc = new Scanner(System.in);
+		 System.out.println("Enter Book titile: ");
+		 String title = sc.nextLine();
+		 
+		 System.out.println("Eneter author name: ");
+		 String author = sc.nextLine();
+		 
+		 System.out.println("Enter ISBN: ");
+		 String isbn = sc.nextLine();
+		 
+		 System.out.println("Enter total copies: ");
+		 int totalCopies = sc.nextInt();
+		 
+		 String sql = "INSERT INTO books "
+			        + "(title, author, isbn, total_copies, available_copies) "
+			        + "VALUES (?, ?, ?, ?, ?)";
+		 
+		 try(Connection con = DBConnection.getConnection();
+				 PreparedStatement ps = con.prepareStatement(sql)){
+					 ps.setString(1,title);
+					 ps.setString(2, author);
+					 ps.setString(3, isbn);
+					 ps.setInt(4, totalCopies);
+					 ps.setInt(5,totalCopies);
+					 
+					 int rows = ps.executeUpdate();
+					 if(rows > 0) {
+						 System.out.println("Book added sucessfully!");
+					 }
+				 }catch (SQLException e) {
+					 System.out.println("Error adding book.");
+					 e.printStackTrace();
+				 }
+	 }
+	 
+	 public void viewBooks() {
+
+	     String sql = "SELECT * FROM books";
+
+	     try (Connection con = DBConnection.getConnection();
+	          PreparedStatement ps = con.prepareStatement(sql);
+	          java.sql.ResultSet rs = ps.executeQuery()) {
+
+	         System.out.println("\n========== LIBRARY BOOKS ==========");
+
+	         System.out.printf("%-5s %-25s %-20s %-15s %-10s %-10s%n",
+	                 "ID", "TITLE", "AUTHOR", "ISBN", "TOTAL", "AVAILABLE");
+
+	         while (rs.next()) {
+
+	             int id = rs.getInt("book_id");
+	             String title = rs.getString("title");
+	             String author = rs.getString("author");
+	             String isbn = rs.getString("isbn");
+	             int total = rs.getInt("total_copies");
+	             int available = rs.getInt("available_copies");
+
+	             System.out.printf("%-5d %-25s %-20s %-15s %-10d %-10d%n",
+	                     id, title, author, isbn, total, available);
+	         }
+
+	     } catch (SQLException e) {
+	         System.out.println("Error retrieving books.");
+	         e.printStackTrace();
+	     }
+	 }
+	 
+//	 public static void main(String[] args) {
+//		 BookDAO dao = new BookDAO();
+//		 dao.addBook();
+//	 }
+	 
+	 public static void main(String[] args) {
+		    BookDAO dao = new BookDAO();
+		    dao.viewBooks();
+		}
+}
